@@ -1,0 +1,22 @@
+[project]
+name = "mnemolith-mender"
+version = "0.1.0"
+description = "Keeps Mnemolith memories fresh: Nemotron drafts fixes for stale memories, you approve."
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "mnemolith>=0.2.2",
+  "mcp",
+  "openai",
+  "python-dotenv",
+  "tavily-python",
+  "typer",
+  "rich",
+]
+
+[project.scripts]
+mender = "mender.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
