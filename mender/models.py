@@ -47,5 +47,5 @@ class QueueItem:
     triage_why: str
     draft: Optional[Draft] = None
     diff: str = ""
-    status: Literal["pending", "approved", "rejected"] = "pending"
+    status: Literal["pending", "approved", "rejected", "obsolete"] = "pending"
     file_hashes: dict = field(default_factory=dict)   # path -> blob hash when drafted

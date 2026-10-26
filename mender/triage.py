@@ -1,17 +1,12 @@
-import json, re
 from . import config, llm
 from .models import ChangePayload, TriageResult
 from .payload import all_gone, diff_text
 from .prompts import TRIAGE_SYSTEM
 
 def _parse(text: str) -> TriageResult:
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if m:
-        try:
-            d = json.loads(m.group(0))
-            return TriageResult(bool(d["invalidated"]), str(d.get("why", "")))
-        except (ValueError, KeyError):
-            pass
+    d = llm.extract_json(text)
+    if d and isinstance(d.get("invalidated"), bool):
+        return TriageResult(d["invalidated"], str(d.get("why", "")))
     return TriageResult(True, "triage output unparseable, escalating")
 
 def triage(p: ChangePayload) -> TriageResult:

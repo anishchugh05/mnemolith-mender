@@ -20,7 +20,12 @@ def approve(memory_id: str, text: str | None = None) -> str:
         raise Drifted(f"{memory_id}: files changed since this was drafted. "
                       "Run `mender run` to re-draft.")
     # Imported here so importing this module never needs Mnemolith/Java.
-    from .mnemolith_client import apply_confirm, apply_replace
+    from .mnemolith_client import apply_confirm, apply_replace, status
+    now = status(memory_id)
+    if now != "stale":  # someone (or an AI tool) already confirmed, replaced or removed it
+        queue.set_status(memory_id, "obsolete")
+        raise LookupError(f"{memory_id} was already handled elsewhere (it's {now or 'gone'} now); "
+                          "dropped it from the queue.")
     if it.kind == "replace":
         new_text = (text if text is not None else it.draft.new_text).strip()
         if not new_text:

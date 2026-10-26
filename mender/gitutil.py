@@ -33,7 +33,7 @@ def blob_hash(rel: str) -> Optional[str]:
     p = safe_path(rel)
     if not p or not p.is_file():
         return None
-    out = _git("hash-object", str(p))
+    out = _git("hash-object", "--no-filters", str(p))
     return out.strip() if out else None
 
 def diff_head(rel: str) -> str:
@@ -59,7 +59,7 @@ def find_rename(rel: str, old_hash: Optional[str]) -> Optional[str]:
                 return path
         untracked = (_git("ls-files", "-o", "--exclude-standard") or "").splitlines()
         if untracked:
-            hashes = (_git("hash-object", "--stdin-paths", stdin="\n".join(untracked) + "\n")
+            hashes = (_git("hash-object", "--no-filters", "--stdin-paths", stdin="\n".join(untracked) + "\n")
                       or "").split()
             for path, h in zip(untracked, hashes):
                 if h == old_hash:

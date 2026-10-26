@@ -42,7 +42,12 @@ def run(force: bool = False) -> dict:
             return counts
         existing = {} if force else {i.memory_id: i for i in queue.load()
                                      if i.status in ("pending", "rejected")}
-        for mem in list_stale():
+        stale = list_stale()
+        still = {m.id for m in stale}
+        for it in queue.pending():  # handled elsewhere since it was queued: drop it
+            if it.memory_id not in still:
+                queue.set_status(it.memory_id, "obsolete")
+        for mem in stale:
             counts["stale"] += 1
             p = build(mem)
             hs = hashes(p)

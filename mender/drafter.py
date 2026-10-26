@@ -1,4 +1,4 @@
-import json, re
+import json
 from typing import Optional
 from . import config, llm, tools
 from .models import ChangePayload, Draft
@@ -43,6 +43,9 @@ def draft(p: ChangePayload) -> Optional[Draft]:
                          tools=tools.TOOLS, temperature=0.2, max_tokens=2000)
             m = r.choices[0].message
             if not m.tool_calls:
+                d = llm.extract_json(m.content or "")
+                if d and "new_text" in d:  # answered in text instead of calling submit_draft
+                    return _to_draft(d)
                 messages.append({"role": "assistant", "content": m.content or ""})
                 messages.append({"role": "user",
                                  "content": "Call submit_draft with your final answer."})
@@ -67,10 +70,7 @@ def _fallback(p: ChangePayload) -> Optional[Draft]:
                  [{"role": "system", "content": DRAFT_FALLBACK_SYSTEM},
                   {"role": "user", "content": "\n\n".join(evidence)}],
                  temperature=0.2, max_tokens=2000)
-    m = re.search(r"\{.*\}", r.choices[0].message.content or "", re.DOTALL)
-    if not m:
+    d = llm.extract_json(r.choices[0].message.content or "")
+    if not d or "new_text" not in d:
         return None
-    try:
-        return _to_draft(json.loads(m.group(0)))
-    except (ValueError, KeyError):
-        return None
+    return _to_draft(d)

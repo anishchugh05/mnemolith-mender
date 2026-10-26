@@ -78,7 +78,14 @@ def _install_fake_mnemolith(monkeypatch, root: Path) -> FakeStore:
     server.project_name = lambda: "demo"
     server.repo_root = lambda: str(root)
     server.check_staleness = store.check_staleness
-    server.run = lambda cmd, project, *a: store.listing(a[1]) if a[:1] == ("STATUS",) else []
+    def run(cmd, *a):
+        if cmd == "MEM.LIST":
+            return store.listing(a[2]) if a[1:2] == ("STATUS",) else []
+        if cmd == "MEM.GET":
+            m = store.mem.get(a[0])
+            return ["text", m["text"], "status", m["status"]] if m else None
+        return []
+    server.run = run
     server.status_reason = lambda mid: store.mem[mid]["reason"]
     server.remember = store.remember
     server.replace_memory = store.replace_memory
@@ -149,3 +156,4 @@ def fake_llm(repo, monkeypatch):
 
 def switch_to_mysql(repo):
     (repo.path / "docker-compose.yml").write_text("services:\n  db:\n    image: mysql:8\n")
+    repo.store.check_staleness("demo", repo.path)  # as Mnemolith's recall/check_stale would

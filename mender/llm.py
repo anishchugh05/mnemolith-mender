@@ -1,4 +1,4 @@
-import json, time
+import json, re, time
 from openai import OpenAI
 from . import config
 
@@ -29,3 +29,27 @@ def chat(role: str, model: str, messages: list, tools=None, **kw):
             "latency_s": round(time.time() - t0, 3),
         }) + "\n")
     return resp
+
+_THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
+_DECODER = json.JSONDecoder()
+
+
+def extract_json(text: str):
+    """The last JSON object in a model reply, ignoring <think> blocks, prose and code fences.
+
+    Reasoning models (Nemotron) often think out loud before answering, and that text can
+    contain braces of its own, so a greedy regex is not enough.
+    """
+    text = _THINK.sub("", text or "")
+    if "<think>" in text:  # unterminated thinking (hit max_tokens): keep only what follows it, if anything
+        text = text.split("</think>")[-1] if "</think>" in text else ""
+    found = None
+    for i, ch in enumerate(text):
+        if ch == "{":
+            try:
+                obj, _ = _DECODER.raw_decode(text, i)
+            except ValueError:
+                continue
+            if isinstance(obj, dict):
+                found = obj
+    return found

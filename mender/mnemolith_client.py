@@ -6,7 +6,7 @@ from . import config
 from .models import FileLink, StaleMemory
 
 # Point Mnemolith at the target repo, whatever folder Mender is run from.
-os.environ.setdefault("MNEMOLITH_REPO", str(config.REPO))
+os.environ["MNEMOLITH_REPO"] = str(config.REPO)
 from mnemolith import server  # noqa: E402  (must come after MNEMOLITH_REPO is set)
 
 
@@ -31,6 +31,12 @@ def list_stale() -> list[StaleMemory]:
                  for p, h in (f.rsplit("@", 1) for f in files.split(",") if "@" in f)]
         out.append(StaleMemory(id=mid, text=text, reason=reason, files=links))
     return out
+
+
+def status(memory_id: str) -> str:
+    """The memory's current status in Mnemolith ("" if it doesn't exist)."""
+    got = server.run("MEM.GET", memory_id)
+    return dict(zip(got[0::2], got[1::2])).get("status", "") if got else ""
 
 
 def apply_replace(old_id: str, new_text: str, files: list[str]) -> str:

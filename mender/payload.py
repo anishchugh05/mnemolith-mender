@@ -13,7 +13,7 @@ def build(mem: StaleMemory) -> ChangePayload:
             renamed_to = gitutil.find_rename(link.path, link.old_hash)
             if renamed_to:
                 new, deleted = gitutil.working(renamed_to), False
-        changed = deleted or renamed_to is not None or old is None or old != new
+        changed = deleted or renamed_to is not None or gitutil.blob_hash(link.path) != link.old_hash
         changes.append(FileChange(path=link.path, old=old, new=new, deleted=deleted,
                                   renamed_to=renamed_to, changed=changed))
     return ChangePayload(memory=mem, changes=changes)
