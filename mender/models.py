@@ -19,6 +19,8 @@ class FileChange:
     old: Optional[str]           # None if old version isn't in git
     new: Optional[str]           # None if file was deleted
     deleted: bool = False
+    renamed_to: Optional[str] = None   # set when the "deleted" file moved
+    changed: bool = True         # False if this linked file is identical to the saved version
 
 @dataclass
 class ChangePayload:
@@ -46,3 +48,4 @@ class QueueItem:
     draft: Optional[Draft] = None
     diff: str = ""
     status: Literal["pending", "approved", "rejected"] = "pending"
+    file_hashes: dict = field(default_factory=dict)   # path -> blob hash when drafted

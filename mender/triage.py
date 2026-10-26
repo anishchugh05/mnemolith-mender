@@ -1,7 +1,7 @@
 import json, re
 from . import config, llm
 from .models import ChangePayload, TriageResult
-from .payload import diff_text
+from .payload import all_gone, diff_text
 from .prompts import TRIAGE_SYSTEM
 
 def _parse(text: str) -> TriageResult:
@@ -15,7 +15,7 @@ def _parse(text: str) -> TriageResult:
     return TriageResult(True, "triage output unparseable, escalating")
 
 def triage(p: ChangePayload) -> TriageResult:
-    if p.changes and all(c.deleted for c in p.changes):
+    if all_gone(p):
         return TriageResult(True, "all linked files were deleted")
     diffs = "\n\n".join(diff_text(c) for c in p.changes)
     user = (f"MEMORY {p.memory.id}: {p.memory.text}\n"

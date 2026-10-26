@@ -2,7 +2,7 @@ import json, re
 from typing import Optional
 from . import config, llm, tools
 from .models import ChangePayload, Draft
-from .payload import diff_text, dep_bumps
+from .payload import current_paths, dep_bumps, diff_text
 from .prompts import DRAFT_SYSTEM, DRAFT_FALLBACK_SYSTEM
 
 def _clamp(x) -> float:
@@ -18,9 +18,14 @@ def _context(p: ChangePayload) -> str:
             "Use tavily_search to find what changed in these releases (breaking "
             "changes, new defaults) and include it in the memory if it matters."
             if bumps else "")
+    moved = [f"{c.path} was moved to {c.renamed_to}" for c in p.changes if c.renamed_to]
+    note = ("\nRENAMES DETECTED: " + "; ".join(moved) +
+            "\nA moved file is not a deleted file: update the path, do not say it no longer applies."
+            if moved else "")
     return (f"MEMORY {p.memory.id}: {p.memory.text}\n"
             f"FLAGGED BECAUSE: {p.memory.reason}\n"
-            f"LINKED FILES: {', '.join(l.path for l in p.memory.files)}\n\n"
+            f"LINKED FILES (as saved): {', '.join(l.path for l in p.memory.files)}\n"
+            f"FILES NOW AT: {', '.join(current_paths(p)) or '(none)'}{note}\n\n"
             f"CHANGES:\n{diffs}{hint}")
 
 def _to_draft(d: dict) -> Draft:

@@ -13,6 +13,9 @@ dependencies = [
   "rich",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.scripts]
 mender = "mender.cli:app"
 
@@ -22,3 +25,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["mender"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

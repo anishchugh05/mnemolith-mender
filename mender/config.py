@@ -3,7 +3,9 @@ import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()                                   # nearest .env above this file
+load_dotenv(Path.cwd() / ".env")                # or one in the folder you run from
+load_dotenv(Path.home() / ".config" / "mender" / ".env")   # or a per-user one
 
 BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 API_KEY = os.environ.get("NEBIUS_API_KEY", "")

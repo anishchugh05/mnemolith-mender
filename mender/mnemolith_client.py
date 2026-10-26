@@ -14,13 +14,18 @@ def project() -> str:
     return server.project_name()
 
 
+def _file_driven(reason: str) -> bool:
+    """Stale because a linked file changed or was deleted (not marked outdated by hand)."""
+    return server.FILE_CHANGE in reason or reason.rstrip(". ").endswith("was deleted")
+
+
 def list_stale() -> list[StaleMemory]:
     """Memories retired because a linked file changed (not ones someone marked outdated by hand)."""
     server.check_staleness(project(), server.repo_root())  # flag anything that changed since the last check
     out = []
     for mid, _status, files, text in server.run("MEM.LIST", project(), "STATUS", "stale"):
         reason = server.status_reason(mid)
-        if server.FILE_CHANGE not in reason:
+        if not _file_driven(reason):
             continue
         links = [FileLink(path=p.strip(), old_hash=h.strip() or None)
                  for p, h in (f.rsplit("@", 1) for f in files.split(",") if "@" in f)]

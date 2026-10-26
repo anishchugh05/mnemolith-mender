@@ -16,7 +16,7 @@ TOOLS = [
                        "required": ["path"]}}},
     {"type": "function", "function": {
         "name": "grep_repo",
-        "description": "Search tracked repo files for a literal string. Returns matching lines.",
+        "description": "Case-insensitive search of tracked repo files for a literal string. Returns matching lines.",
         "parameters": {"type": "object",
                        "properties": {"pattern": {"type": "string"}},
                        "required": ["pattern"]}}},
@@ -37,7 +37,7 @@ TOOLS = [
 ]
 
 def _grep(pattern: str) -> str:
-    r = subprocess.run(["git", "grep", "-n", "-I", "-F", "--", pattern],
+    r = subprocess.run(["git", "grep", "-n", "-I", "-i", "-F", "--", pattern],
                        cwd=config.REPO, capture_output=True, text=True)
     lines = r.stdout.splitlines()
     if not lines:
