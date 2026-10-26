@@ -2,7 +2,15 @@ import json, time
 from openai import OpenAI
 from . import config
 
-_client = OpenAI(base_url=config.BASE_URL, api_key=config.API_KEY)
+_client = None
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        if not config.API_KEY:
+            raise RuntimeError("NEBIUS_API_KEY is not set (check your .env).")
+        _client = OpenAI(base_url=config.BASE_URL, api_key=config.API_KEY)
+    return _client
 
 def chat(role: str, model: str, messages: list, tools=None, **kw):
     """Single Token Factory call. Logs model, role, tokens, latency."""
@@ -11,7 +19,7 @@ def chat(role: str, model: str, messages: list, tools=None, **kw):
     if tools:
         args["tools"] = tools
     t0 = time.time()
-    resp = _client.chat.completions.create(**args)
+    resp = _get_client().chat.completions.create(**args)
     u = resp.usage
     with open(config.CALL_LOG, "a") as f:
         f.write(json.dumps({

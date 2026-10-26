@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -12,7 +13,10 @@ TAVILY_KEY = os.environ.get("TAVILY_API_KEY", "")
 MODEL_NANO = os.environ.get("MENDER_NANO", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
 MODEL_ULTRA = os.environ.get("MENDER_ULTRA", "nvidia/Nemotron-3-Ultra-550b-a55b")
 
-REPO = Path(os.environ.get("MENDER_REPO", ".")).resolve()
+# Mnemolith's file paths are relative to the git repo's top folder, so Mender uses that too.
+_start = Path(os.environ.get("MENDER_REPO", ".")).resolve()
+_top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=_start, capture_output=True, text=True)
+REPO = Path(_top.stdout.strip()) if _top.returncode == 0 else _start
 STATE_DIR = REPO / ".mender"
 CALL_LOG = STATE_DIR / "calls.jsonl"
 QUEUE_FILE = STATE_DIR / "queue.json"
