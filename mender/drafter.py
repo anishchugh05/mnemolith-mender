@@ -2,7 +2,7 @@ import json, re
 from typing import Optional
 from . import config, llm, tools
 from .models import ChangePayload, Draft
-from .payload import diff_text
+from .payload import diff_text, dep_bumps
 from .prompts import DRAFT_SYSTEM, DRAFT_FALLBACK_SYSTEM
 
 def _clamp(x) -> float:
@@ -13,10 +13,15 @@ def _clamp(x) -> float:
 
 def _context(p: ChangePayload) -> str:
     diffs = "\n\n".join(diff_text(c) for c in p.changes)
+    bumps = [b for c in p.changes for b in dep_bumps(c)]
+    hint = (f"\n\nDEPENDENCY VERSION CHANGES DETECTED: {'; '.join(bumps)}\n"
+            "Use tavily_search to find what changed in these releases (breaking "
+            "changes, new defaults) and include it in the memory if it matters."
+            if bumps else "")
     return (f"MEMORY {p.memory.id}: {p.memory.text}\n"
             f"FLAGGED BECAUSE: {p.memory.reason}\n"
             f"LINKED FILES: {', '.join(l.path for l in p.memory.files)}\n\n"
-            f"CHANGES:\n{diffs}")
+            f"CHANGES:\n{diffs}{hint}")
 
 def _to_draft(d: dict) -> Draft:
     return Draft(new_text=str(d["new_text"]).strip(),

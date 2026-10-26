@@ -5,11 +5,16 @@ from .models import QueueItem
 from .payload import build, diff_text
 from .triage import triage
 
-def run() -> dict:
+def run(force: bool = False) -> dict:
     """stale memories -> triage (Nano) -> draft (Ultra) -> pending queue."""
-    counts = {"stale": 0, "harmless": 0, "drafted": 0, "manual": 0}
+    counts = {"stale": 0, "skipped": 0, "harmless": 0, "drafted": 0, "manual": 0}
+    seen = set() if force else {i.memory_id for i in queue.load()
+                                if i.status in ("pending", "rejected")}
     for mem in list_stale():
         counts["stale"] += 1
+        if mem.id in seen:
+            counts["skipped"] += 1
+            continue
         p = build(mem)
         files = [c.path for c in p.changes if not c.deleted]
         diff = "\n\n".join(diff_text(c) for c in p.changes)
@@ -18,7 +23,6 @@ def run() -> dict:
             return QueueItem(memory_id=mem.id, kind=kind, old_text=mem.text,
                              files=files, triage_why=why, draft=d, diff=diff)
 
-        # Every linked file was deleted: no model should invent a replacement.
         if p.changes and all(c.deleted for c in p.changes):
             queue.add(item("manual", "all linked files were deleted"))
             counts["manual"] += 1
