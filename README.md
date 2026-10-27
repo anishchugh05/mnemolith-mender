@@ -23,7 +23,10 @@ approve it. **Nothing is written to your memory store without your approval.**
 - **Renames are not deletions.** A moved file is detected (same content, or git's rename
   detection) and the draft updates the path instead of saying "this no longer applies".
 - **Deleted files get a human.** If every linked file is gone, nothing is invented: it goes to
-  the queue as a manual decision.
+  the queue as a manual decision, where you can retire the memory (marked outdated in
+  Mnemolith, history kept) or dismiss it.
+- **No conflicting fixes.** If the memory was already fixed elsewhere (say Claude replaced it
+  through Mnemolith), approving does nothing and the draft is dropped.
 - **Read-only agent tools**, confined to the repo.
 - **No duplicate work.** The same stale memory is not re-drafted on every commit unless its
   files changed. Failed model calls are retried on the next run, not queued.
@@ -38,14 +41,14 @@ dependency-bump research via Tavily, call/routing stats, tests.
 - **Nebius Token Factory:** all inference (OpenAI-compatible API).
 - **NVIDIA Nemotron Nano:** triage. **Nemotron Ultra:** tool-using drafting agent.
 - **Tavily:** release notes for dependency changes.
-- `mender stats` reports measured routing and token use (memories processed, handled by Nano
-  alone, sent to Ultra).
+- `mender stats` reports measured routing and token use: decisions made, how many Nano settled
+  alone, how many went to Ultra (a memory re-drafted after another edit counts again).
 
 TODO: paste measured numbers from the demo repo here.
 
 ## Setup
-Needs Python 3.10+, Java 11+ (Mnemolith's engine), and Mnemolith itself.
-TODO: confirm the Mnemolith install command.
+Needs Python 3.10+, Java 11+ (Mnemolith's engine), and [Mnemolith](https://mnemolith.dev)
+(`pip install mnemolith`; it's also installed as a dependency below).
 
     git clone https://github.com/anishchugh05/mnemolith-mender
     cd mnemolith-mender && uv venv && source .venv/bin/activate && uv pip install -e .

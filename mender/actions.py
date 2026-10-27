@@ -37,6 +37,22 @@ def approve(memory_id: str, text: str | None = None) -> str:
     return msg
 
 
+def retire(memory_id: str) -> str:
+    """For manual items (every linked file deleted): mark the memory outdated in Mnemolith,
+    so it stops being reported as stale and doesn't wait in the queue forever."""
+    it = queue.get_pending(memory_id)
+    if it is None:
+        raise LookupError(f"{memory_id} is not pending")
+    from .mnemolith_client import apply_retire, status
+    if status(memory_id) != "stale":
+        queue.set_status(memory_id, "obsolete")
+        raise LookupError(f"{memory_id} was already handled elsewhere; dropped it from the queue.")
+    gone = [p.split("@")[0] for p in it.file_hashes] or ["its files"]
+    msg = apply_retire(memory_id, f"retired with Mender: {', '.join(gone)} deleted")
+    queue.set_status(memory_id, "retired")
+    return msg
+
+
 def reject(memory_id: str) -> None:
     if queue.get_pending(memory_id) is None:
         raise LookupError(f"{memory_id} is not pending")

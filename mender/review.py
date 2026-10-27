@@ -49,14 +49,18 @@ def review() -> None:
             console.print("[dim]Memory looks unaffected by the change: probably still true.[/dim]")
             choices = "[a]pprove (mark still true) [r]eject [s]kip"
         else:
-            console.print("[yellow]Needs a manual decision.[/yellow]")
-            choices = "[r]eject (dismiss) [s]kip"
+            console.print("[yellow]Every linked file was deleted. Retire the memory if it no longer "
+                          "applies, or dismiss to leave it as is.[/yellow]")
+            choices = "[t] retire [r]eject (dismiss) [s]kip"
 
         while True:
             c = typer.prompt(choices, default="s").strip().lower()[:1]
             if c == "s":
                 break
             try:
+                if c == "t" and it.kind == "manual":
+                    console.print(actions.retire(it.memory_id), "\n")
+                    break
                 if c == "r":
                     actions.reject(it.memory_id)
                     console.print("Rejected, nothing changed.\n")

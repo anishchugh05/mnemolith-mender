@@ -70,3 +70,21 @@ def test_unchanged_uncommitted_file_is_not_reported_as_changed(repo):
     by_path = {c.path: c for c in p.changes}
     assert by_path["notes.txt"].changed is False
     assert by_path["docker-compose.yml"].changed is True
+
+
+def test_retire_memory_whose_files_were_all_deleted(repo, fake_llm):
+    import pytest
+    from mender import actions, pipeline, queue
+    repo.store.remember("Seed data lives in docker-compose.yml", ["docker-compose.yml"])
+    (repo.path / "docker-compose.yml").unlink()
+    fake_llm.handler = lambda *a: pytest.fail("no model call for a deleted file")
+    pipeline.run()
+    [it] = queue.pending()
+    assert it.kind == "manual"
+    with pytest.raises(ValueError):
+        actions.approve("m1")
+    actions.retire("m1")
+    assert queue.pending() == []
+    assert "deleted" in repo.store.mem["m1"]["reason"]
+    pipeline.run()                       # retired by hand: not picked up again
+    assert queue.pending() == []

@@ -179,7 +179,7 @@ def stats_cmd():
     r = stats.routing()
     seen = r["harmless"] + r["drafted"] + r["still_true"] + r["manual"]
     if seen:
-        console.print(f"Routing: {seen} memories processed | {r['harmless']} handled by Nano alone | "
+        console.print(f"Routing: {seen} decisions | {r['harmless']} handled by Nano alone | "
                       f"{r['drafted'] + r['still_true']} sent to Ultra | {r['manual']} manual")
     console.print(f"Pending drafts: {len(queue.pending())}")
 

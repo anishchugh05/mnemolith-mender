@@ -51,6 +51,11 @@ def apply_replace(old_id: str, new_text: str, files: list[str]) -> str:
     return server.replace_memory(old_id, new_id)
 
 
+def apply_retire(memory_id: str, reason: str) -> str:
+    """The fact no longer applies (e.g. its files were deleted): retire it, keeping its history."""
+    return server.mark_outdated(memory_id, reason)
+
+
 def apply_confirm(memory_id: str) -> str:
     """The change didn't affect this fact: mark it current again, linked to today's file versions."""
     return server.confirm_memory(memory_id)

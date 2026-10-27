@@ -64,6 +64,10 @@ class FakeStore:
         self.mem[old]["reason"] = f'replaced by {new}: "{self.mem[new]["text"]}"'
         return f"{old} retired; {new} replaces it."
 
+    def mark_outdated(self, mid, reason):
+        self.mem[mid]["status"], self.mem[mid]["reason"] = "stale", reason
+        return f"Marked {mid} as outdated."
+
     def confirm_memory(self, mid):
         m = self.mem[mid]
         m["status"], m["reason"] = "active", ""
@@ -90,6 +94,7 @@ def _install_fake_mnemolith(monkeypatch, root: Path) -> FakeStore:
     server.remember = store.remember
     server.replace_memory = store.replace_memory
     server.confirm_memory = store.confirm_memory
+    server.mark_outdated = store.mark_outdated
     pkg = types.ModuleType("mnemolith")
     pkg.server = server
     monkeypatch.setitem(sys.modules, "mnemolith", pkg)

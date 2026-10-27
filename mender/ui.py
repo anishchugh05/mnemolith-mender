@@ -74,6 +74,8 @@ def make_handler(token: str, port: int):
                     if self.path == "/api/approve":
                         msg = actions.approve(mid, data.get("text"))
                         return self._json(200, {"ok": True, "message": msg})
+                    if self.path == "/api/retire":
+                        return self._json(200, {"ok": True, "message": actions.retire(mid)})
                     if self.path == "/api/reject":
                         actions.reject(mid)
                         return self._json(200, {"ok": True, "message": f"{mid} rejected"})
@@ -173,7 +175,7 @@ const b=$("span","conf"),i=$("i");i.style.width=Math.round(it.draft.confidence*1
 s.appendChild(document.createTextNode(it.draft.confidence.toFixed(2)));d.appendChild(s);c.appendChild(d);
 ta=$("textarea");ta.value=it.draft.new_text;ta.style.display="none";c.appendChild(ta)}
 else if(it.kind==="confirm")c.appendChild($("div","draft","The change looks unrelated to this memory, so it is probably still true."));
-else c.appendChild($("div","warn","Needs a manual decision: nothing to approve."));
+else c.appendChild($("div","warn","Every linked file was deleted. Retire the memory if it no longer applies."));
 if(it.drifted)c.appendChild($("div","warn","Files changed since this was drafted. Run `mender run` to re-draft."));
 const row=$("div","row");
 const act=(path,body)=>async()=>{try{const j=await post(path,body());toast(j.message);load()}catch(e){toast(e.message);load()}};
@@ -181,6 +183,7 @@ if(it.kind!=="manual"){
 const ap=$("button","p",it.kind==="confirm"?"Mark still true":"Approve");ap.disabled=it.drifted;
 ap.onclick=act("/api/approve",()=>({id:it.id,text:ta&&ta.style.display!=="none"?ta.value:undefined}));row.appendChild(ap);
 if(ta){const ed=$("button","","Edit");ed.disabled=it.drifted;ed.onclick=()=>{ta.style.display=ta.style.display==="none"?"block":"none"};row.appendChild(ed)}}
+if(it.kind==="manual"){const rt=$("button","p","Retire memory");rt.onclick=act("/api/retire",()=>({id:it.id}));row.appendChild(rt)}
 const rj=$("button","",it.kind==="manual"?"Dismiss":"Reject");rj.onclick=act("/api/reject",()=>({id:it.id}));row.appendChild(rj);
 c.appendChild(row);return c}
 async function load(){
@@ -190,7 +193,7 @@ const bar=document.getElementById("bar");bar.textContent="";
 const r=s.routing,seen=r.harmless+r.drafted+r.still_true+r.manual;
 const add=(k,v)=>{const e=$("span","");const b=$("b","",v);e.appendChild(b);e.appendChild(document.createTextNode(" "+k));bar.appendChild(e)};
 add("pending",s.items.length);
-if(seen){add("memories processed",seen);add("handled by Nano alone",r.harmless);add("sent to Ultra",r.drafted+r.still_true)}
+if(seen){add("decisions",seen);add("handled by Nano alone",r.harmless);add("sent to Ultra",r.drafted+r.still_true)}
 Object.entries(s.models).forEach(([m,v])=>add("tokens, "+m.split("/").pop()+" ("+v.calls+" calls)",(v.prompt+v.completion).toLocaleString()));
 const list=document.getElementById("list");list.textContent="";
 if(!s.items.length)list.appendChild($("div","empty","Nothing to review. Run `mender run` after code changes."));
