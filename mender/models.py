@@ -37,6 +37,8 @@ class Draft:
     new_text: str
     reason: str
     confidence: float            # model-reported, not calibrated
+    evidence: list = field(default_factory=list)   # real tool calls the drafter made
+    warnings: list = field(default_factory=list)   # claims we could not verify against them
 
 @dataclass
 class QueueItem:

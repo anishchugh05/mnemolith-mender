@@ -20,7 +20,9 @@ def state() -> dict:
             "id": it.memory_id, "kind": it.kind, "old_text": it.old_text,
             "files": it.files, "why": it.triage_why, "diff": it.diff,
             "draft": ({"new_text": it.draft.new_text, "reason": it.draft.reason,
-                       "confidence": it.draft.confidence} if it.draft else None),
+                       "confidence": it.draft.confidence,
+                       "evidence": it.draft.evidence,
+                       "warnings": it.draft.warnings} if it.draft else None),
             "drifted": it.kind != "manual" and queue.drifted(it),
         })
     return {"repo": str(config.REPO), "items": items,
@@ -145,6 +147,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .warn{color:var(--warn);font-size:13px;margin-top:10px}
 #msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card);
 border:1px solid var(--line);padding:8px 16px;border-radius:8px;display:none;max-width:90vw}
+.evs{font-size:13px;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ev{padding:3px 0}.ev b{font-weight:600}.src{margin-left:14px;font-size:12px}
+.snip{color:var(--mut);font-size:12px}
+.src a{color:var(--acc);text-decoration:none}.src a:hover{text-decoration:underline}
 .empty{text-align:center;color:var(--mut);padding:48px 0}
 </style></head><body><main>
 <h1>Mender review</h1><div class="sub" id="repo"></div>
@@ -173,6 +179,16 @@ c.appendChild($("div","lbl","Drafted memory"));const d=$("div","draft");d.append
 const s=$("small","");s.appendChild(document.createTextNode(it.draft.reason+"  ·  confidence (self-reported) "));
 const b=$("span","conf"),i=$("i");i.style.width=Math.round(it.draft.confidence*100)+"%";b.appendChild(i);s.appendChild(b);
 s.appendChild(document.createTextNode(it.draft.confidence.toFixed(2)));d.appendChild(s);c.appendChild(d);
+(it.draft.warnings||[]).forEach(w=>c.appendChild($("div","warn","\u26a0 Unverified: "+w)));
+const ev=it.draft.evidence||[];
+if(ev.length){c.appendChild($("div","lbl","Evidence (what the agent actually looked at)"));
+const ul=$("div","evs");ev.forEach(e=>{const r=$("div","ev");
+const name={tavily_search:"Web search",grep_repo:"Repo search",read_file:"Read file",git_log:"Git history"}[e.tool]||e.tool;
+r.appendChild($("b","",name+": "));r.appendChild(document.createTextNode(e.arg+"  \u2192 "+e.summary));
+(e.sources||[]).forEach(x=>{if(!/^https?:\/\//.test(x.url))return;const a=$("a","",x.title||x.url);
+a.href=x.url;a.target="_blank";a.rel="noopener noreferrer";const li=$("div","src");li.appendChild(a);if(x.snippet)li.appendChild($("div","snip",x.snippet));r.appendChild(li)});
+ul.appendChild(r)});c.appendChild(ul)}
+else if(it.draft.reason)c.appendChild($("div","why","No tool calls were recorded for this draft."));
 ta=$("textarea");ta.value=it.draft.new_text;ta.style.display="none";c.appendChild(ta)}
 else if(it.kind==="confirm")c.appendChild($("div","draft","The change looks unrelated to this memory, so it is probably still true."));
 else c.appendChild($("div","warn","Every linked file was deleted. Retire the memory if it no longer applies."));

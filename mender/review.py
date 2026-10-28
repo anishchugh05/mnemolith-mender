@@ -40,6 +40,12 @@ def review() -> None:
         if it.diff:
             console.print(Syntax(it.diff, "diff", theme="ansi_dark"))
         if it.kind == "replace" and it.draft:
+            for w in it.draft.warnings:
+                console.print(f"[yellow]Unverified: {w}[/yellow]")
+            for e in it.draft.evidence:
+                console.print(f"[dim]evidence: {e['tool']} {e['arg']!r} -> {e['summary']}[/dim]")
+                for x in e.get("sources", []):
+                    console.print(f"[dim]    {x['url']}[/dim]")
             console.print(Panel(
                 f"{it.draft.new_text}\n\n[dim]{it.draft.reason}[/dim]\n"
                 f"Model confidence: {it.draft.confidence:.2f} (self-reported)",

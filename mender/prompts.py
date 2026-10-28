@@ -20,6 +20,12 @@ Rules:
 - Before claiming something changed, VERIFY with tools: grep_repo to see whether the old
   claim is still referenced elsewhere, read_file or git_log for context, tavily_search
   only for dependency or library version changes.
+- Keep the memory to one or two short sentences. Never invent specifics (numbers, defaults,
+  names): include a detail only if a tool result states it.
+- A web result only counts if it explicitly names the exact version involved (for example
+  "5.0.0"). If no result does, do not describe release contents: write that it is a major
+  version bump and its defaults may have changed. In your reason, quote the phrase from the
+  result that supports each detail you include.
 - Only state what the evidence supports. If the old file version was unavailable, say so
   in your reason and lower your confidence.
 - If the memory is actually still true, submit it unchanged.

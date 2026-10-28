@@ -1,4 +1,4 @@
-import json, subprocess
+import json, re, subprocess
 from . import config, gitutil
 
 TOOLS = [
@@ -50,7 +50,7 @@ def _tavily(query: str) -> str:
         return "web search unavailable (no TAVILY_API_KEY)"
     from tavily import TavilyClient
     res = TavilyClient(api_key=config.TAVILY_KEY).search(query, max_results=3)
-    return "\n".join(f"{x['title']}: {x['content'][:400]} ({x['url']})"
+    return "\n".join(f"{x['title']}: {' '.join(x['content'].split())[:400]} ({x['url']})"
                      for x in res.get("results", []))
 
 def run_tool(name: str, args: dict) -> str:
@@ -68,3 +68,28 @@ def run_tool(name: str, args: dict) -> str:
     except Exception as e:  # tools must never crash the agent loop
         return f"tool error: {e}"
     return f"unknown tool: {name}"
+
+
+_SRC = re.compile(r"^(.*?): (.*)\((https?://[^)\s]+)\)\s*$")
+
+def evidence(name: str, args: dict, result: str) -> dict:
+    """A compact, honest record of one tool call, for the review card.
+
+    It is built from what the tool actually returned, not from what the model says it did.
+    """
+    arg = str(next(iter(args.values()), "")) if args else ""
+    ev = {"tool": name, "arg": arg, "summary": "", "sources": []}
+    if name == "tavily_search":
+        for line in result.splitlines():
+            m = _SRC.match(line)
+            if m:
+                ev["sources"].append({"title": m.group(1)[:120], "url": m.group(3),
+                                      "snippet": m.group(2).strip()[:400]})
+        ev["summary"] = (f"{len(ev['sources'])} web results" if ev["sources"]
+                         else result[:120])
+    elif name == "grep_repo":
+        ev["summary"] = ("no matches" if result == "no matches"
+                         else f"{len(result.splitlines())} matching lines")
+    else:
+        ev["summary"] = result[:120].replace("\n", " ")
+    return ev
